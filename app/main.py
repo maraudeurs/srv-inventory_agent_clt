@@ -2,35 +2,31 @@ import requests
 import json
 import os
 import logging
+from datetime import datetime
 
 from utils.logger_config import setup_logging
+from system_info.system_info import get_system_info
 from system_info.virtualization_discover import check_virtualization
 
-def send_system_info(url, token, system_info):
+def send_system_info(url, discovery_generic_user, discovery_generic_password, system_info):
     try:
-        headers = {'Authorization': token, 'Content-Type': 'application/json'}
-        response = requests.post(url, json=system_info, headers=headers, verify=False)
-        if response.status_code == 200:
-            print("System info sent successfully!")
-        else:
-            print("Failed to send system info. Status code:", response.status_code)
-    except requests.exceptions.RequestException as e:
-        print("Error sending system info:", e)
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(url, json=system_info, headers=headers, verify=False, auth=(discovery_generic_user, discovery_generic_password))
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as http_err:
+        logger.warning(f"HTTP error occurred: {http_err.response.status_code} - {http_err.response.text}")
+    except requests.exceptions.RequestException as req_err:
+        logger.warning(f"Request error occurred: {req_err}")
+    except Exception as err:
+        logger.warning(f"Other error occurred: {err}")
 
-def get_token(url, username, password):
-    try:
-        response = requests.post(url, auth=(username, password), verify=False)
-        if response.status_code == 200:
-            token = json.loads(response.text)['token']
-            return token
-        else:
-            print("Failed to get token. Status code:", response.status_code)
-            return None
-    except requests.exceptions.RequestException as e:
-        print("Error getting token:", e)
-        return None
 
 if __name__ == "__main__":
+
+    ## get inventory_agent-srv parameters
+    server_url = os.getenv('SERVER_URL')
+    discovery_generic_user = os.getenv('DISCOVERY_GENERIC_USER')
+    discovery_generic_password = os.getenv('DISCOVERY_GENERIC_PASSWORD')
 
     ## Manage logging
     setup_logging()
@@ -41,15 +37,23 @@ if __name__ == "__main__":
     logger.debug(system_virtualization_installed)
 
     ## Get system info
+    system_info_data = get_system_info()
 
-    # SERVER_URL = os.getenv('SERVER_URL')
-    # # server_url = "http://localhost:8000/add"
-    # AUTH_URL = os.getenv('SERVER_URL')
-    # # auth_url = "http://localhost:8000/login"
-    # # username = "username"
-    # # password = "password"
-
-    # token = get_token(auth_url, username, password)
-    # if token:
-    #     system_info = get_system_info()
-    #     send_system_info(server_url, token; system_info)
+    ## Send system info
+    system_info = {
+        "name": system_info_data['hostname'],
+        "description": "test",
+        "main_ipv4" : system_info_data['system_main_ipv4'],
+        "ip_v4_list" : system_info_data['system_ipv4_list'],
+        "ip_v6_list" : system_info_data['system_ipv6_list'],
+        "status" : "active",
+        "inventory_source_method" : "inventory_agent_clt",
+        "system_os" : system_info_data['system'],
+        "system_release" : system_info_data['release'],
+        "system_architecture" : system_info_data['architecture'],
+        "hostname" : system_info_data['hostname'],
+        "python_version" : system_info_data['python_version'],
+        "virtualization_method" : system_virtualization_installed,
+        "update_date" : datetime.now().isoformat(),
+    }
+    send_system_info(server_url, discovery_generic_user, discovery_generic_password, system_info)
