@@ -2,11 +2,12 @@ import subprocess
 import logging
 from utils.logger_config import setup_logging
 
-def check_command(command: str) -> str:
+def check_command(logger, command: str) -> str:
     """
     Utility function to check if a command exists and run it.
 
     Args:
+        logger : logger instance object
         command : linux command string
 
     Returns:
@@ -22,11 +23,12 @@ def check_command(command: str) -> str:
         logger.debug(f"Command '{' '.join(command)}' not found.")
         return None
 
-def check_service(service_name: str) -> bool:
+def check_service(logger, service_name: str) -> bool:
     """
     Check if a system service is active.
 
     Args:
+        logger : logger instance object
         service_name : systemctl service name as string
 
     Returns:
@@ -42,18 +44,21 @@ def check_service(service_name: str) -> bool:
         logger.debug("Systemctl command not found.")
         return False
 
-def check_docker() -> bool:
+def check_docker(logger) -> bool:
     """
     Check if Docker is installed and running.
+
+    Args:
+        logger : logger instance object
 
     Returns:
         bool: return True if docker is installed and active else return False
     """
     logger.debug("Checking for Docker...")
-    docker_version = check_command(['docker', '--version'])
+    docker_version = check_command(logger, ['docker', '--version'])
     if docker_version:
         logger.debug(f"Docker is installed: {docker_version}")
-        if check_service('docker'):
+        if check_service(logger, 'docker'):
             logger.debug("Docker service is active.")
             return True
         else:
@@ -63,18 +68,21 @@ def check_docker() -> bool:
         logger.debug("Docker is not installed.")
         return False
 
-def check_proxmox() -> bool:
+def check_proxmox(logger) -> bool:
     """
     Check if Proxmox VE is installed and running.
+
+    Args:
+        logger : logger instance object
 
     Returns:
         bool: return True if Proxmox is installed and active else return False
     """
     logger.debug("Checking for Proxmox VE...")
-    proxmox_version = check_command(['pveversion'])
+    proxmox_version = check_command(logger, ['pveversion'])
     if proxmox_version:
         logger.debug(f"Proxmox VE is installed: {proxmox_version}")
-        if check_service('pvedaemon'):
+        if check_service(logger, 'pvedaemon'):
             logger.debug("Proxmox VE service is active.")
             return True
         else:
@@ -84,18 +92,21 @@ def check_proxmox() -> bool:
         logger.debug("Proxmox VE is not installed.")
         return False
 
-def check_lxc() -> bool:
+def check_lxc(logger) -> bool:
     """
     Check if LXC is installed and running.
+
+    Args:
+        logger : logger instance object
 
     Returns:
         bool: return True if LXC is installed and active else return False
     """
     logger.debug("Checking for LXC...")
-    lxc_config = check_command(['lxc-checkconfig'])
+    lxc_config = check_command(logger, ['lxc-checkconfig'])
     if lxc_config:
         logger.debug("LXC is installed.")
-        if check_service('lxc'):
+        if check_service(logger, 'lxc'):
             logger.debug("LXC service is active.")
             return True
         else:
@@ -105,15 +116,18 @@ def check_lxc() -> bool:
         logger.debug("LXC is not installed.")
         return False
 
-def check_qemu() -> bool:
+def check_qemu(logger) -> bool:
     """
     Check if QEMU is installed and running.
+
+    Args:
+        logger : logger instance object
 
     Returns:
         bool: return True if QEMU is installed and active else return False
     """
     logger.debug("Checking for QEMU...")
-    qemu_version = check_command(['qemu-system-x86_64', '--version'])
+    qemu_version = check_command(logger, ['qemu-system-x86_64', '--version'])
     if qemu_version:
         logger.debug(f"QEMU is installed: {qemu_version}")
         return True
@@ -121,15 +135,18 @@ def check_qemu() -> bool:
         logger.debug("QEMU is not installed.")
         return False
 
-def check_kvm() -> bool:
+def check_kvm(logger) -> bool:
     """
     Check if KVM is installed and running.
+
+    Args:
+        logger : logger instance object
 
     Returns:
         bool: return True if KVM is installed and active else return False
     """
     logger.debug("Checking for KVM...")
-    kvm_version = check_command(['kvm', '--version'])
+    kvm_version = check_command(logger, ['kvm', '--version'])
     if kvm_version:
         logger.debug(f"KVM is installed: {kvm_version}")
         return True
@@ -148,38 +165,38 @@ def check_virtualization(logger) -> list:
     exist.
 
     Args:
-        logger : logger object
+        logger : logger instance object
 
     Returns:
         list: list of virtualization method on the system
     """
     system_virtualization_installed = []
     try:
-        if check_docker():
+        if check_docker(logger):
             system_virtualization_installed.append("docker")
     except Exception as e:
         logger.debug(f"Error checking Docker: {e}")
 
     try:
-        if check_proxmox():
+        if check_proxmox(logger):
             system_virtualization_installed.append("proxmox")
     except Exception as e:
         logger.debug(f"Error checking Proxmox VE: {e}")
 
     try:
-        if check_lxc():
+        if check_lxc(logger):
             system_virtualization_installed.append("lxc")
     except Exception as e:
         logger.debug(f"Error checking LXC: {e}")
 
     try:
-        if check_qemu():
+        if check_qemu(logger):
             system_virtualization_installed.append("qemu")
     except Exception as e:
         logger.debug(f"Error checking QEMU: {e}")
 
     try:
-        if check_kvm():
+        if check_kvm(logger):
             system_virtualization_installed.append("kvm")
     except Exception as e:
         logger.debug(f"Error checking KVM: {e}")
