@@ -3,6 +3,7 @@ import json
 import os
 import logging
 from datetime import datetime
+from dotenv import load_dotenv
 
 from utils.logger_config import setup_logging
 from system_info.system_info import get_system_info
@@ -24,16 +25,20 @@ def send_system_info(url, discovery_generic_user, discovery_generic_password, sy
 if __name__ == "__main__":
 
     ## get inventory_agent-srv parameters
+    load_dotenv()
     server_url = os.getenv('SERVER_URL')
     discovery_generic_user = os.getenv('DISCOVERY_GENERIC_USER')
     discovery_generic_password = os.getenv('DISCOVERY_GENERIC_PASSWORD')
+    log_level = os.getenv("LOG_LEVEL", "INFO")
+    log_output = os.getenv("LOG_OUTPUT", "stdout")
+    log_file = os.getenv("LOG_FILE", "/var/log/srv_inventory_clt.log")
 
     ## Manage logging
-    setup_logging()
+    setup_logging(log_level, log_output, log_file)
     logger = logging.getLogger(__name__)
 
     ## Get virtualization info
-    system_virtualization_installed = check_virtualization()
+    system_virtualization_installed = check_virtualization(logger)
     logger.debug(system_virtualization_installed)
 
     ## Get system info

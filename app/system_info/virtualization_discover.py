@@ -2,10 +2,6 @@ import subprocess
 import logging
 from utils.logger_config import setup_logging
 
-## Manage logging
-setup_logging()
-logger = logging.getLogger('__name__')
-
 def check_command(command: str) -> str:
     """
     Utility function to check if a command exists and run it.
@@ -141,7 +137,7 @@ def check_kvm() -> bool:
         logger.debug("KVM is not installed.")
         return False
 
-def check_virtualization() -> list:
+def check_virtualization(logger) -> list:
     """
     Check on system if any of virtualization method in :
         - docker
@@ -150,6 +146,9 @@ def check_virtualization() -> list:
         - quemu
         - kvm
     exist.
+
+    Args:
+        logger : logger object
 
     Returns:
         list: list of virtualization method on the system
