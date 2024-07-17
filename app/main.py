@@ -24,7 +24,7 @@ def send_system_info(url, discovery_generic_user, discovery_generic_password, sy
         logger.warning(f"Other error occurred: {err}")
 
 
-def main():
+def main(logger):
     """
     Send inventory data to inventory_agent server every day
     """
@@ -56,7 +56,6 @@ def main():
     send_system_info(server_url, discovery_generic_user, discovery_generic_password, system_info)
 
 
-
 if __name__ == "__main__":
 
     ## get inventory_agent-srv parameters
@@ -68,8 +67,6 @@ if __name__ == "__main__":
     log_output = os.getenv("LOG_OUTPUT", "stdout")
     log_file = os.getenv("LOG_FILE", "/var/log/srv_inventory_clt.log")
     job_schedule_hour = os.getenv("JOB_SCHEDULE_HOUR", "00:00")
-
-    ## job
 
     ## Manage logging
     setup_logging(log_level, log_output, log_file)
@@ -85,7 +82,7 @@ if __name__ == "__main__":
     logger.debug(f"data will be send next day at {job_schedule_hour}")
 
     ## define job schedule
-    @repeat(every().day.at(str(job_schedule_hour)))
+    @repeat(every().day.at(str(job_schedule_hour)), logger)
     def job(logger):
         main(logger)
 
