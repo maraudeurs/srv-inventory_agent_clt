@@ -20,6 +20,10 @@ Current supported inventory data :
 - virtualization_method: docker, kvm, proxmox, quemu
 - update_date
 
+### technical data
+
+- python version : 3.11
+- pip packages : see [requirements file](./requirements.txt)
 
 ## Usage
 

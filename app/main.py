@@ -4,6 +4,8 @@ import os
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
+from schedule import every, repeat, run_pending
+import time
 
 from utils.logger_config import setup_logging
 from system_info.system_info import get_system_info
@@ -22,20 +24,10 @@ def send_system_info(url, discovery_generic_user, discovery_generic_password, sy
         logger.warning(f"Other error occurred: {err}")
 
 
-if __name__ == "__main__":
-
-    ## get inventory_agent-srv parameters
-    load_dotenv()
-    server_url = os.getenv('SERVER_URL')
-    discovery_generic_user = os.getenv('DISCOVERY_GENERIC_USER')
-    discovery_generic_password = os.getenv('DISCOVERY_GENERIC_PASSWORD')
-    log_level = os.getenv("LOG_LEVEL", "INFO")
-    log_output = os.getenv("LOG_OUTPUT", "stdout")
-    log_file = os.getenv("LOG_FILE", "/var/log/srv_inventory_clt.log")
-
-    ## Manage logging
-    setup_logging(log_level, log_output, log_file)
-    logger = logging.getLogger(__name__)
+def main():
+    """
+    Send inventory data to inventory_agent server every day
+    """
 
     ## Get virtualization info
     system_virtualization_installed = check_virtualization(logger)
@@ -44,7 +36,7 @@ if __name__ == "__main__":
     ## Get system info
     system_info_data = get_system_info()
 
-    ## Send system info
+    # Send system info
     system_info = {
         "name": system_info_data['hostname'],
         "description": "test",
@@ -62,3 +54,42 @@ if __name__ == "__main__":
         "update_date" : datetime.now().isoformat(),
     }
     send_system_info(server_url, discovery_generic_user, discovery_generic_password, system_info)
+
+
+
+if __name__ == "__main__":
+
+    ## get inventory_agent-srv parameters
+    load_dotenv()
+    server_url = os.getenv('SERVER_URL')
+    discovery_generic_user = os.getenv('DISCOVERY_GENERIC_USER')
+    discovery_generic_password = os.getenv('DISCOVERY_GENERIC_PASSWORD')
+    log_level = os.getenv("LOG_LEVEL", "INFO")
+    log_output = os.getenv("LOG_OUTPUT", "stdout")
+    log_file = os.getenv("LOG_FILE", "/var/log/srv_inventory_clt.log")
+    job_schedule_hour = os.getenv("JOB_SCHEDULE_HOUR", "00:00")
+
+    ## job
+
+    ## Manage logging
+    setup_logging(log_level, log_output, log_file)
+    logger = logging.getLogger(__name__)
+
+    if server_url is None or discovery_generic_user is None or discovery_generic_password is None:
+        raise EnvironmentError("Some mandatory variables are missing, be sure to check env vars (SERVER_URL, DISCOVERY_GENERIC_USER, DISCOVERY_GENERIC_PASSWORD)")
+    else:
+        logger.debug("env var successfully loaded")
+
+    logger.debug("script started")
+    logger.debug(f"data will be send to server url : {server_url}")
+    logger.debug(f"data will be send next day at {job_schedule_hour}")
+
+    ## define job schedule
+    @repeat(every().day.at(str(job_schedule_hour)))
+    def job(logger):
+        main(logger)
+
+    while True:
+        run_pending()
+        time.sleep(1)
+
