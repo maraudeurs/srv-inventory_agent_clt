@@ -25,6 +25,15 @@ Current supported inventory data :
 - python version : 3.11
 - pip packages : see [requirements file](./requirements.txt)
 
+## Prerequisites
+
+- Set .env with mandatory variables :
+    - SERVER_URL
+    - DISCOVERY_GENERIC_USER
+    - DISCOVERY_GENERIC_PASSWORD
+
+- See [example.env file](./app/example.env) for other env var.
+
 ## Usage
 
 ### classic python script
